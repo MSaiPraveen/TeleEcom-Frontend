@@ -1,37 +1,27 @@
 import React, { useContext, useState, useEffect } from "react";
-import AppContext from "../Context/Context";
-import axios from "axios";
+import { AppContext } from "../Context/Context";
 import CheckoutPopup from "./CheckoutPopup";
-import { Button } from 'react-bootstrap';
+import { Button } from "react-bootstrap";
+import { toast } from "react-toastify";
+import unplugged from "../assets/unplugged.png";
 
 const Cart = () => {
-  const { cart, removeFromCart, clearCart } = useContext(AppContext);
+  const { cart, removeFromCart, clearCart, placeOrder } = useContext(AppContext);
+
   const [cartItems, setCartItems] = useState([]);
   const [totalPrice, setTotalPrice] = useState(0);
-  const [cartImage, setCartImage] = useState([]);
   const [showModal, setShowModal] = useState(false);
 
-  const baseUrl = import.meta.env.VITE_BASE_URL;
-
+  // When global cart changes, sync local cartItems
   useEffect(() => {
-    const fetchImagesAndUpdateCart = async () => {
-      console.log("Cart", cart);
-      try {
-        const response = await axios.get(`${baseUrl}/api/product`);
-        console.log("cart", cart);
-        setCartItems(cart);
-      } catch (error) {
-        console.error("Error fetching product data:", error);
-      }
-    };
-
     if (cart.length) {
-      fetchImagesAndUpdateCart();
+      setCartItems(cart);
     } else {
       setCartItems([]);
     }
   }, [cart]);
 
+  // Recalculate total whenever cartItems change
   useEffect(() => {
     const total = cartItems.reduce(
       (acc, item) => acc + item.price * item.quantity,
@@ -39,11 +29,6 @@ const Cart = () => {
     );
     setTotalPrice(total);
   }, [cartItems]);
-
-  const converUrlToFile = async (blobData, fileName) => {
-    const file = new File([blobData], fileName, { type: blobData.type });
-    return file;
-  };
 
   const handleIncreaseQuantity = (itemId) => {
     const newCartItems = cartItems.map((item) => {
@@ -73,57 +58,32 @@ const Cart = () => {
     const newCartItems = cartItems.filter((item) => item.id !== itemId);
     setCartItems(newCartItems);
   };
-  const convertBase64ToDataURL = (base64String, mimeType = 'image/jpeg') => {
-  // ✅ Fallback image if base64String is empty or undefined
-  const fallbackImage = "/fallback-image.jpg"; // make sure this image exists in your public folder
 
-  if (!base64String) return fallbackImage;
+  const convertBase64ToDataURL = (base64String, mimeType = "image/jpeg") => {
+    const fallbackImage = unplugged;
 
-  if (base64String.startsWith("data:")) {
-    return base64String;
-  }
+    if (!base64String) return fallbackImage;
+    if (base64String.startsWith("data:")) return base64String;
+    if (base64String.startsWith("http")) return base64String;
 
-  if (base64String.startsWith("http")) {
-    return base64String;
-  }
+    return `data:${mimeType};base64,${base64String}`;
+  };
 
-  return `data:${mimeType};base64,${base64String}`;
-};
-
-  const handleCheckout = async () => {
+  // Called by CheckoutPopup with customerName + email
+  const handleCheckout = async (customerName, email) => {
     try {
-      for (const item of cartItems) {
-        const { imageUrl, imageName, imageData, imageType, quantity, ...rest } = item;
-        const updatedStockQuantity = item.stockQuantity - item.quantity;
-
-        const updatedProductData = { ...rest, stockQuantity: updatedStockQuantity };
-        console.log("updated product data", updatedProductData);
-
-        const cartProduct = new FormData();
-        cartProduct.append("imageFile", cartImage);
-        cartProduct.append(
-          "product",
-          new Blob([JSON.stringify(updatedProductData)], { type: "application/json" })
-        );
-
-        await axios
-          .put(`${baseUrl}/api/product/${item.id}`, cartProduct, {
-            headers: {
-              "Content-Type": "multipart/form-data",
-            },
-          })
-          .then((response) => {
-            console.log("Product updated successfully:", (cartProduct));
-          })
-          .catch((error) => {
-            console.error("Error updating product:", error);
-          });
+      if (!cartItems.length) {
+        toast.info("Your cart is empty");
+        return;
       }
-      clearCart();
-      setCartItems([]);
+
+      await placeOrder(customerName, email); // uses /api/orders on backend
+      clearCart();              // clear global cart
+      setCartItems([]);         // clear local view
       setShowModal(false);
     } catch (error) {
-      console.log("error during checkout", error);
+      console.error("Error during checkout", error);
+      toast.error("Failed to place order");
     }
   };
 
@@ -140,7 +100,9 @@ const Cart = () => {
                 <div className="text-center py-5">
                   <i className="bi bi-cart-x fs-1 text-muted"></i>
                   <h5 className="mt-3">Your cart is empty</h5>
-                  <a href="/" className="btn btn-primary mt-3">Continue Shopping</a>
+                  <a href="/" className="btn btn-primary mt-3">
+                    Continue Shopping
+                  </a>
                 </div>
               ) : (
                 <>
@@ -167,20 +129,30 @@ const Cart = () => {
                                   width="80"
                                   height="80"
                                   style={{ objectFit: "cover" }}
+                                  onError={(e) => {
+                                    e.target.src = unplugged;
+                                  }}
                                 />
                                 <div>
                                   <h6 className="mb-0">{item.name}</h6>
-                                  <small className="text-muted">{item.brand}</small>
+                                  <small className="text-muted">
+                                    {item.brand}
+                                  </small>
                                 </div>
                               </div>
                             </td>
                             <td>₹ {item.price}</td>
                             <td>
-                              <div className="input-group input-group-sm" style={{ width: "120px" }}>
+                              <div
+                                className="input-group input-group-sm"
+                                style={{ width: "120px" }}
+                              >
                                 <button
                                   className="btn btn-outline-secondary"
                                   type="button"
-                                  onClick={() => handleDecreaseQuantity(item.id)}
+                                  onClick={() =>
+                                    handleDecreaseQuantity(item.id)
+                                  }
                                 >
                                   <i className="bi bi-dash"></i>
                                 </button>
@@ -193,13 +165,17 @@ const Cart = () => {
                                 <button
                                   className="btn btn-outline-secondary"
                                   type="button"
-                                  onClick={() => handleIncreaseQuantity(item.id)}
+                                  onClick={() =>
+                                    handleIncreaseQuantity(item.id)
+                                  }
                                 >
                                   <i className="bi bi-plus"></i>
                                 </button>
                               </div>
                             </td>
-                            <td className="fw-bold">₹ {(item.price * item.quantity).toFixed(2)}</td>
+                            <td className="fw-bold">
+                              ₹ {(item.price * item.quantity).toFixed(2)}
+                            </td>
                             <td>
                               <button
                                 className="btn btn-sm btn-outline-danger"

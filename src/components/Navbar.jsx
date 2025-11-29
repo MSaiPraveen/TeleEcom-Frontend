@@ -1,13 +1,14 @@
-import React, { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import React, { useEffect, useRef, useState, useContext } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import api from "../axios.jsx";
+import { AppContext } from "../Context/Context.jsx";
 
 const Navbar = ({ onSelectCategory }) => {
   const getInitialTheme = () => {
     const storedTheme = localStorage.getItem("theme");
     return storedTheme ? storedTheme : "light-theme";
   };
-  
+
   const [selectedCategory, setSelectedCategory] = useState("");
   const [theme, setTheme] = useState(getInitialTheme());
   const [input, setInput] = useState("");
@@ -17,92 +18,85 @@ const Navbar = ({ onSelectCategory }) => {
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [showNoProductsMessage, setShowNoProductsMessage] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isNavCollapsed, setIsNavCollapsed] = useState(true);
 
-  // 2. Add these new state variables
-const [isNavCollapsed, setIsNavCollapsed] = useState(true);
-const navbarRef = useRef(null);
-  
+  const navbarRef = useRef(null);
   const navigate = useNavigate();
-  const baseUrl = import.meta.env.VITE_BASE_URL;
 
+  // 🔐 Auth / cart from context
+  const { user, isAdmin, logout, cart } = useContext(AppContext);
+  const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+
+  // Initial data fetch (optional)
   useEffect(() => {
     fetchInitialData();
   }, []);
 
-  // 3. Add this to your useEffect or as a separate useEffect
-useEffect(() => {
-  // Add click event listener to close navbar when clicking outside
-  const handleClickOutside = (event) => {
-    if (navbarRef.current && !navbarRef.current.contains(event.target)) {
-      setIsNavCollapsed(true);
-    }
-  };
-  
-  // Add event listener to document when component mounts
-  document.addEventListener("mousedown", handleClickOutside);
-  
-  // Clean up event listener on component unmount
-  return () => {
-    document.removeEventListener("mousedown", handleClickOutside);
-  };
-}, []);
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (navbarRef.current && !navbarRef.current.contains(event.target)) {
+        setIsNavCollapsed(true);
+      }
+    };
 
-  // Initial data fetch (if needed)
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
   const fetchInitialData = async () => {
     try {
-      const response = await axios.get(`${baseUrl}/api/product`);
-      console.log(response.data, 'navbar initial data');
+      const response = await api.get("/api/product");
+      console.log(response.data, "navbar initial data");
     } catch (error) {
       console.error("Error fetching initial data:", error);
     }
   };
 
-// 4. Add these new functions
-// Toggle navbar collapse state
-const handleNavbarToggle = () => {
-  setIsNavCollapsed(!isNavCollapsed);
-};
+  // Navbar toggle (mobile)
+  const handleNavbarToggle = () => {
+    setIsNavCollapsed(!isNavCollapsed);
+  };
 
-// Close navbar when a link is clicked
-const handleLinkClick = () => {
-  setIsNavCollapsed(true);
-};
+  const handleLinkClick = () => {
+    setIsNavCollapsed(true);
+  };
 
-  // Update input value without searching
+  // Search input change
   const handleInputChange = (value) => {
     setInput(value);
   };
 
-  // Only search when the form is submitted
+  // Search submit
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (input.trim() === "") return;
-    
+
     setShowNoProductsMessage(false);
     setIsLoading(true);
     setIsNavCollapsed(true);
-    
+
     try {
-      const response = await axios.get(
-        `${baseUrl}/api/product/search?keyword=${input}`
-      );
+      const response = await api.get("/api/product/search", {
+        params: { keyword: input },
+      });
       setSearchResults(response.data);
-      
+
       if (response.data.length === 0) {
         setNoResults(true);
         setShowNoProductsMessage(true);
       } else {
-        // Redirect to search results page with the search data
         navigate(`/search-results`, { state: { searchData: response.data } });
       }
-      
+
       console.log("Search results:", response.data);
     } catch (error) {
       console.error("Error searching:", error);
       setShowNoProductsMessage(true);
     } finally {
-      setIsLoading(false); // Hide loader when API call finishes (success or error)
+      setIsLoading(false);
     }
   };
 
@@ -111,7 +105,7 @@ const handleLinkClick = () => {
     onSelectCategory(category);
     setIsNavCollapsed(true);
   };
-  
+
   const toggleTheme = () => {
     const newTheme = theme === "dark-theme" ? "light-theme" : "dark-theme";
     setTheme(newTheme);
@@ -130,56 +124,126 @@ const handleLinkClick = () => {
     "Toys",
     "Fashion",
   ];
-  
+
   return (
-    <nav className="navbar navbar-expand-lg fixed-top bg-white shadow-sm" ref={navbarRef}>
+    <nav
+      className="navbar navbar-expand-lg fixed-top bg-white shadow-sm"
+      ref={navbarRef}
+    >
       <div className="container-fluid">
         <a className="navbar-brand" href="https://telusko.com/">
           Telusko
         </a>
+
         <button
-  className="navbar-toggler"
-  type="button"
-  onClick={handleNavbarToggle}
-  aria-controls="navbarSupportedContent"
-  aria-expanded={!isNavCollapsed}
-  aria-label="Toggle navigation"
->
-  <span className="navbar-toggler-icon"></span>
-</button>
+          className="navbar-toggler"
+          type="button"
+          onClick={handleNavbarToggle}
+          aria-controls="navbarSupportedContent"
+          aria-expanded={!isNavCollapsed}
+          aria-label="Toggle navigation"
+        >
+          <span className="navbar-toggler-icon"></span>
+        </button>
+
         <div
-          className={`${isNavCollapsed ? 'collapse' : ''} navbar-collapse`}
+          className={`${isNavCollapsed ? "collapse" : ""} navbar-collapse`}
           id="navbarSupportedContent"
         >
           <ul className="navbar-nav me-auto mb-2 mb-lg-0">
             <li className="nav-item">
-              <a className="nav-link active" aria-current="page" href="/" onClick={handleLinkClick}>
+              <Link
+                className="nav-link active"
+                aria-current="page"
+                to="/"
+                onClick={handleLinkClick}
+              >
                 Home
-              </a>
-            </li>
-            <li className="nav-item">
-              <a className="nav-link" href="/add_product" onClick={handleLinkClick}>
-                Add Product
-              </a>
+              </Link>
             </li>
 
-            <li className="nav-item">
-              <a className="nav-link" href="/orders" onClick={handleLinkClick}>
-                Orders
-              </a>
+            {/* Category dropdown (if you want to use it) */}
+            <li className="nav-item dropdown">
+              <button
+                className="nav-link dropdown-toggle btn btn-link"
+                id="categoryDropdown"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+                type="button"
+              >
+                Categories
+              </button>
+              <ul className="dropdown-menu" aria-labelledby="categoryDropdown">
+                {categories.map((cat) => (
+                  <li key={cat}>
+                    <button
+                      className="dropdown-item"
+                      type="button"
+                      onClick={() => handleCategorySelect(cat)}
+                    >
+                      {cat}
+                    </button>
+                  </li>
+                ))}
+              </ul>
             </li>
-      
 
+            {/* Admin-only links */}
+            {isAdmin && (
+              <>
+                <li className="nav-item">
+                  <Link
+                    className="nav-link"
+                    to="/add_product"
+                    onClick={handleLinkClick}
+                  >
+                    Add Product
+                  </Link>
+                </li>
+
+                <li className="nav-item">
+                  <Link
+                    className="nav-link"
+                    to="/orders"
+                    onClick={handleLinkClick}
+                  >
+                    Orders
+                  </Link>
+                </li>
+              </>
+            )}
           </ul>
-          
-         
-          
-          <div className="d-flex align-items-center">
-            <a href="/cart" className="nav-link text-dark me-3" onClick={handleLinkClick}>
+
+          <div className="d-flex align-items-center gap-3">
+            {/* Theme toggle */}
+            <button
+              type="button"
+              className="btn btn-outline-secondary btn-sm"
+              onClick={toggleTheme}
+            >
+              {theme === "dark-theme" ? "Light Mode" : "Dark Mode"}
+            </button>
+
+            {/* Cart */}
+            <Link
+              to="/cart"
+              className="nav-link text-dark me-3 position-relative"
+              onClick={handleLinkClick}
+            >
               <i className="bi bi-cart me-1"></i>
               Cart
-            </a>
-            <form className="d-flex" role="search" onSubmit={handleSubmit} id="searchForm">
+              {cartCount > 0 && (
+                <span className="badge bg-danger ms-1">{cartCount}</span>
+              )}
+            </Link>
+
+            {/* Search */}
+            <form
+              className="d-flex"
+              role="search"
+              onSubmit={handleSubmit}
+              id="searchForm"
+            >
               <input
                 className="form-control me-2"
                 type="search"
@@ -194,22 +258,60 @@ const handleLinkClick = () => {
                   type="button"
                   disabled
                 >
-                  <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                  <span
+                    className="spinner-border spinner-border-sm"
+                    role="status"
+                    aria-hidden="true"
+                  ></span>
                   <span className="visually-hidden">Loading...</span>
                 </button>
               ) : (
-                <button
-                  className="btn btn-outline-success"
-                  type="submit"
-                >
+                <button className="btn btn-outline-success" type="submit">
                   Search
                 </button>
               )}
             </form>
-            
+
             {showNoProductsMessage && (
-              <div className="alert alert-warning position-absolute mt-2" style={{ top: "100%", zIndex: 1000 }}>
+              <div
+                className="alert alert-warning position-absolute mt-2"
+                style={{ top: "100%", zIndex: 1000 }}
+              >
                 No products found matching your search.
+              </div>
+            )}
+
+            {/* Auth section */}
+            {user ? (
+              <div className="d-flex align-items-center ms-3">
+                <span className="me-2">Hi, {user}</span>
+                <button
+                  className="btn btn-outline-danger btn-sm"
+                  onClick={() => {
+                    logout();
+                    handleLinkClick();
+                    navigate("/");
+                  }}
+                >
+                  Logout
+                </button>
+              </div>
+            ) : (
+              <div className="d-flex align-items-center ms-3">
+                <Link
+                  to="/login"
+                  className="btn btn-outline-primary btn-sm me-2"
+                  onClick={handleLinkClick}
+                >
+                  Login
+                </Link>
+                <Link
+                  to="/register"
+                  className="btn btn-primary btn-sm"
+                  onClick={handleLinkClick}
+                >
+                  Register
+                </Link>
               </div>
             )}
           </div>

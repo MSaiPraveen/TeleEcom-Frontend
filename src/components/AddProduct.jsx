@@ -1,9 +1,11 @@
-import React, { useState } from "react";
-import axios from "axios";
+import React, { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import api from "../axios.jsx";
+import { AppContext } from "../Context/Context";
 
 const AddProduct = () => {
+  const { isAdmin } = useContext(AppContext); // not strictly needed, route is guarded, but useful if you want
   const [product, setProduct] = useState({
     name: "",
     brand: "",
@@ -15,40 +17,45 @@ const AddProduct = () => {
     productAvailable: false,
   });
 
-  const baseUrl = import.meta.env.VITE_BASE_URL;
   const [image, setImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [loading, setLoading] = useState(false);
   const [validated, setValidated] = useState(false);
   const [errors, setErrors] = useState({});
+
   const navigate = useNavigate();
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
     const fieldValue = type === "checkbox" ? checked : value;
-    setProduct({ ...product, [name]: fieldValue });
+    setProduct((prev) => ({ ...prev, [name]: fieldValue }));
     if (errors[name]) {
-      setErrors({ ...errors, [name]: null });
+      setErrors((prev) => ({ ...prev, [name]: null }));
     }
   };
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     setImage(file);
+
     if (file) {
       const reader = new FileReader();
-      reader.onload = (e) => setImagePreview(e.target.result);
+      reader.onload = (ev) => setImagePreview(ev.target.result);
       reader.readAsDataURL(file);
+
       const validTypes = ["image/jpeg", "image/png"];
       if (!validTypes.includes(file.type)) {
-        setErrors({
-          ...errors,
+        setErrors((prev) => ({
+          ...prev,
           image: "Please select a valid image file (JPEG or PNG)",
-        });
+        }));
       } else if (file.size > 5 * 1024 * 1024) {
-        setErrors({ ...errors, image: "Image size should be less than 5MB" });
+        setErrors((prev) => ({
+          ...prev,
+          image: "Image size should be less than 5MB",
+        }));
       } else {
-        setErrors({ ...errors, image: null });
+        setErrors((prev) => ({ ...prev, image: null }));
       }
     } else {
       setImagePreview(null);
@@ -74,53 +81,66 @@ const AddProduct = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const submitHandler = (event) => {
+  const submitHandler = async (event) => {
     event.preventDefault();
     const form = event.currentTarget;
     setValidated(true);
+
     if (!validateForm() || !form.checkValidity()) {
       event.stopPropagation();
       return;
     }
 
-    setLoading(true);
-    const formData = new FormData();
-    formData.append("imageFile", image);
-    formData.append(
-      "product",
-      new Blob([JSON.stringify(product)], { type: "application/json" })
-    );
+    try {
+      setLoading(true);
 
-    axios
-      .post(`${baseUrl}/api/product`, formData, {
+      // Ensure numeric fields are numbers, not strings
+      const normalizedProduct = {
+        ...product,
+        price: Number(product.price),
+        stockQuantity: Number(product.stockQuantity),
+      };
+
+      const formData = new FormData();
+      formData.append("imageFile", image);
+      formData.append(
+        "product",
+        new Blob([JSON.stringify(normalizedProduct)], {
+          type: "application/json",
+        })
+      );
+
+      await api.post("/api/product", formData, {
         headers: { "Content-Type": "multipart/form-data" },
-      })
-      .then((response) => {
-        toast.success("Product added successfully");
-        setProduct({
-          name: "",
-          brand: "",
-          description: "",
-          price: "",
-          category: "",
-          stockQuantity: "",
-          releaseDate: "",
-          productAvailable: false,
-        });
-        setImage(null);
-        setImagePreview(null);
-        setValidated(false);
-        setErrors({});
-        navigate("/");
-      })
-      .catch((error) => {
-        if (error.response && error.response.data) {
-          setErrors(error.response.data);
-        } else {
-          toast.error("Error adding product");
-        }
-        setLoading(false);
       });
+
+      toast.success("Product added successfully");
+      setProduct({
+        name: "",
+        brand: "",
+        description: "",
+        price: "",
+        category: "",
+        stockQuantity: "",
+        releaseDate: "",
+        productAvailable: false,
+      });
+      setImage(null);
+      setImagePreview(null);
+      setValidated(false);
+      setErrors({});
+      navigate("/");
+    } catch (error) {
+      console.error("Error adding product:", error);
+      if (error.response && error.response.data) {
+        // if backend sends field errors
+        setErrors((prev) => ({ ...prev, form: "Error adding product" }));
+      } else {
+        toast.error("Error adding product");
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -256,7 +276,7 @@ const AddProduct = () => {
         </div>
 
         <div className="col-12 text-center">
-          <button type="submit" className="btn btn-primary">
+          <button type="submit" className="btn btn-primary" disabled={loading}>
             {loading ? "Adding..." : "Add Product"}
           </button>
         </div>

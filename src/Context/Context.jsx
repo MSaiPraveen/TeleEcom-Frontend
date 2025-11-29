@@ -1,73 +1,165 @@
-import axios from "../axios";
-import { useState, useEffect, createContext } from "react";
+// src/Context/Context.jsx
+import React, { createContext, useState, useEffect } from "react";
+import api from "../axios.jsx";
+import { toast } from "react-toastify";
 
-const AppContext = createContext({
-  data: [],
-  isError: "",
-  cart: [],
-  addToCart: (product) => {},
-  removeFromCart: (productId) => {},
-  refreshData:() =>{},
-  updateStockQuantity: (productId, newQuantity) =>{}  
-});
+export const AppContext = createContext();
 
-export const AppProvider = ({ children }) => {
-  const [data, setData] = useState([]);
-  const [isError, setIsError] = useState("");
-  const [cart, setCart] = useState(JSON.parse(localStorage.getItem('cart')) || []);
-  const baseUrl = import.meta.env.VITE_BASE_URL;
+const ContextProvider = ({ children }) => {
+  /* ------------ AUTH ------------ */
+  const [user, setUser] = useState(localStorage.getItem("username") || null);
+  const [token, setToken] = useState(localStorage.getItem("token") || null);
+  const [isAdmin, setIsAdmin] = useState(
+    localStorage.getItem("isAdmin") === "true"
+  );
 
-  const addToCart = (product) => {
-    const existingProductIndex = cart.findIndex((item) => item.id === product.id);
-    if (existingProductIndex !== -1) {
-      const updatedCart = cart.map((item, index) =>
-        index === existingProductIndex
-          ? { ...item, quantity: item.quantity + 1 }
-          : item
-      );
-      setCart(updatedCart);
-      localStorage.setItem('cart', JSON.stringify(updatedCart));
-    } else {
-      const updatedCart = [...cart, { ...product, quantity: 1 }];
-      setCart(updatedCart);
-      localStorage.setItem('cart', JSON.stringify(updatedCart));
-    }
-  };
+  /* ------------ PRODUCTS ------------ */
+  const [products, setProducts] = useState([]);
+  const [productsLoading, setProductsLoading] = useState(false);
 
-  const removeFromCart = (productId) => {
-    console.log("productID",productId)
-    const updatedCart = cart.filter((item) => item.id !== productId);
-    setCart(updatedCart);
-    localStorage.setItem('cart', JSON.stringify(updatedCart));
-    console.log("CART",cart)
-  };
-
-  const refreshData = async () => {
+  /* ------------ CART ------------ */
+  const [cart, setCart] = useState(() => {
     try {
-      const response = await axios.get(`${baseUrl}/api/product`);
-      setData(response.data);
-    } catch (error) {
-      setIsError(error.message);
+      const stored = localStorage.getItem("cart");
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
     }
-  };
+  });
 
-  const clearCart =() =>{
-    setCart([]);
-  }
-  
+  /* ------------ PERSIST CART ------------ */
   useEffect(() => {
-    refreshData();
+    localStorage.setItem("cart", JSON.stringify(cart));
+  }, [cart]);
+
+  /* ------------ LOAD PRODUCTS ONCE ------------ */
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setProductsLoading(true);
+        const res = await api.get("/api/product");
+        setProducts(res.data);
+      } catch (err) {
+        console.error("Failed to load products:", err);
+        toast.error("Failed to load products");
+      } finally {
+        setProductsLoading(false);
+      }
+    };
+
+    fetchProducts();
   }, []);
 
-  useEffect(() => {
-    localStorage.setItem('cart', JSON.stringify(cart));
-  }, [cart]);
-  
+  /* ------------ LOGIN / LOGOUT ------------ */
+  const login = (jwt, username, adminFlag) => {
+    localStorage.setItem("token", jwt);
+    localStorage.setItem("username", username);
+    localStorage.setItem("isAdmin", adminFlag ? "true" : "false");
+
+    setToken(jwt);
+    setUser(username);
+    setIsAdmin(!!adminFlag);
+  };
+
+  const logout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("username");
+    localStorage.removeItem("isAdmin");
+    localStorage.removeItem("cart");
+
+    setToken(null);
+    setUser(null);
+    setIsAdmin(false);
+    setCart([]);
+  };
+
+  /* ------------ CART HELPERS ------------ */
+  const addToCart = (product, qty = 1) => {
+    setCart((prev) => {
+      const existing = prev.find((item) => item.id === product.id);
+      if (existing) {
+        return prev.map((item) =>
+          item.id === product.id
+            ? { ...item, quantity: item.quantity + qty }
+            : item
+        );
+      }
+      return [...prev, { ...product, quantity: qty }];
+    });
+  };
+
+  const removeFromCart = (id) => {
+    setCart((prev) => prev.filter((item) => item.id !== id));
+  };
+
+  const clearCart = () => setCart([]);
+
+  const cartTotal = cart.reduce(
+    (sum, item) => sum + Number(item.price) * item.quantity,
+    0
+  );
+
+  /* ------------ PLACE ORDER (JWT, /api/orders) ------------ */
+  const placeOrder = async (customerName, email) => {
+    try {
+      if (!token) {
+        toast.error("Please log in to place an order.");
+        return;
+      }
+
+      if (!cart.length) {
+        toast.info("Your cart is empty.");
+        return;
+      }
+
+      const items = cart.map((item) => ({
+        productId: item.id,
+        quantity: item.quantity,
+      }));
+
+      const res = await api.post("/api/orders", {
+        customerName,
+        email,
+        items,
+      });
+
+      clearCart();
+      toast.success("Order placed successfully!");
+      return res.data;
+    } catch (error) {
+      console.error("Order failed:", error);
+      toast.error("Failed to place order. Please try again.");
+      throw error;
+    }
+  };
+
+  const value = {
+    // auth
+    user,
+    token,
+    isAdmin,
+    isAuthenticated: !!token,
+    login,
+    logout,
+
+    // products
+    products,
+    productsLoading,
+
+    // cart
+    cart,
+    addToCart,
+    removeFromCart,
+    clearCart,
+    cartTotal,
+
+    // orders
+    placeOrder,
+  };
+
   return (
-    <AppContext.Provider value={{ data, isError, cart, addToCart, removeFromCart,refreshData, clearCart  }}>
-      {children}
-    </AppContext.Provider>
+    <AppContext.Provider value={value}>{children}</AppContext.Provider>
   );
 };
 
-export default AppContext;
+export default ContextProvider;
