@@ -27,31 +27,40 @@ const ContextProvider = ({ children }) => {
     }
   });
 
+  /* ------------ SYNC JWT TO AXIOS ------------ */
+  useEffect(() => {
+    if (token) {
+      api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+    } else {
+      delete api.defaults.headers.common["Authorization"];
+    }
+  }, [token]);
+
   /* ------------ PERSIST CART ------------ */
   useEffect(() => {
     localStorage.setItem("cart", JSON.stringify(cart));
   }, [cart]);
 
-  /* ------------ LOAD PRODUCTS ONCE ------------ */
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        setProductsLoading(true);
-        const res = await api.get("/api/product");
-        setProducts(res.data);
-      } catch (err) {
-        console.error("Failed to load products:", err);
-        toast.error("Failed to load products");
-      } finally {
-        setProductsLoading(false);
-      }
-    };
+  /* ------------ LOAD PRODUCTS ------------ */
+  const fetchProducts = async () => {
+    try {
+      setProductsLoading(true);
+      const res = await api.get("/api/product");
+      setProducts(res.data);
+    } catch (err) {
+      console.error("Failed to load products:", err);
+      toast.error("Failed to load products");
+    } finally {
+      setProductsLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchProducts();
   }, []);
 
   /* ------------ LOGIN / LOGOUT ------------ */
-  const login = (jwt, username, adminFlag) => {
+  const login = (jwt, username, adminFlag = false) => {
     localStorage.setItem("token", jwt);
     localStorage.setItem("username", username);
     localStorage.setItem("isAdmin", adminFlag ? "true" : "false");
@@ -145,6 +154,7 @@ const ContextProvider = ({ children }) => {
     // products
     products,
     productsLoading,
+    refreshProducts: fetchProducts,
 
     // cart
     cart,

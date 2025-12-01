@@ -1,6 +1,11 @@
-import React, { useEffect, useRef, useState, useContext } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import api from "../axios.jsx";
+import React, {
+  useEffect,
+  useRef,
+  useState,
+  useContext,
+} from "react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
 import { AppContext } from "../Context/Context.jsx";
 
 const Navbar = ({ onSelectCategory }) => {
@@ -12,49 +17,44 @@ const Navbar = ({ onSelectCategory }) => {
   const [selectedCategory, setSelectedCategory] = useState("");
   const [theme, setTheme] = useState(getInitialTheme());
   const [input, setInput] = useState("");
-  const [searchResults, setSearchResults] = useState([]);
-  const [noResults, setNoResults] = useState(false);
-  const [searchFocused, setSearchFocused] = useState(false);
-  const [showSearchResults, setShowSearchResults] = useState(false);
   const [showNoProductsMessage, setShowNoProductsMessage] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
   const [isNavCollapsed, setIsNavCollapsed] = useState(true);
-
   const navbarRef = useRef(null);
+
   const navigate = useNavigate();
+  const baseUrl = import.meta.env.VITE_BASE_URL;
 
-  // 🔐 Auth / cart from context
-  const { user, isAdmin, logout, cart } = useContext(AppContext);
-  const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+  // 🔹 context
+  const { cart, isAuthenticated, isAdmin, user, logout } =
+    useContext(AppContext);
 
-  // Initial data fetch (optional)
   useEffect(() => {
     fetchInitialData();
   }, []);
 
+  // Close navbar when clicking outside (mobile)
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (navbarRef.current && !navbarRef.current.contains(event.target)) {
         setIsNavCollapsed(true);
       }
     };
-
     document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Initial data fetch (optional)
   const fetchInitialData = async () => {
     try {
-      const response = await api.get("/api/product");
+      const response = await axios.get(`${baseUrl}/api/product`);
       console.log(response.data, "navbar initial data");
     } catch (error) {
       console.error("Error fetching initial data:", error);
     }
   };
 
-  // Navbar toggle (mobile)
   const handleNavbarToggle = () => {
     setIsNavCollapsed(!isNavCollapsed);
   };
@@ -63,15 +63,12 @@ const Navbar = ({ onSelectCategory }) => {
     setIsNavCollapsed(true);
   };
 
-  // Search input change
   const handleInputChange = (value) => {
     setInput(value);
   };
 
-  // Search submit
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (input.trim() === "") return;
 
     setShowNoProductsMessage(false);
@@ -79,19 +76,17 @@ const Navbar = ({ onSelectCategory }) => {
     setIsNavCollapsed(true);
 
     try {
-      const response = await api.get("/api/product/search", {
-        params: { keyword: input },
-      });
-      setSearchResults(response.data);
+      const response = await axios.get(
+        `${baseUrl}/api/product/search?keyword=${input}`
+      );
 
       if (response.data.length === 0) {
-        setNoResults(true);
         setShowNoProductsMessage(true);
       } else {
-        navigate(`/search-results`, { state: { searchData: response.data } });
+        navigate(`/search-results`, {
+          state: { searchData: response.data },
+        });
       }
-
-      console.log("Search results:", response.data);
     } catch (error) {
       console.error("Error searching:", error);
       setShowNoProductsMessage(true);
@@ -125,13 +120,33 @@ const Navbar = ({ onSelectCategory }) => {
     "Fashion",
   ];
 
+  const handleLogout = () => {
+    logout();
+    setIsNavCollapsed(true);
+    navigate("/login");
+  };
+
+  const goToLogin = () => {
+    setIsNavCollapsed(true);
+    navigate("/login");
+  };
+
+  const goToRegister = () => {
+    setIsNavCollapsed(true);
+    navigate("/register");
+  };
+
   return (
     <nav
       className="navbar navbar-expand-lg fixed-top bg-white shadow-sm"
       ref={navbarRef}
     >
       <div className="container-fluid">
-        <a className="navbar-brand" href="https://telusko.com/">
+        <a
+          className="navbar-brand fw-bold"
+          href="/"
+          onClick={handleLinkClick}
+        >
           Telusko
         </a>
 
@@ -143,37 +158,41 @@ const Navbar = ({ onSelectCategory }) => {
           aria-expanded={!isNavCollapsed}
           aria-label="Toggle navigation"
         >
-          <span className="navbar-toggler-icon"></span>
+          <span className="navbar-toggler-icon" />
         </button>
 
         <div
           className={`${isNavCollapsed ? "collapse" : ""} navbar-collapse`}
           id="navbarSupportedContent"
         >
+          {/* LEFT: navigation links */}
           <ul className="navbar-nav me-auto mb-2 mb-lg-0">
             <li className="nav-item">
-              <Link
+              <a
                 className="nav-link active"
                 aria-current="page"
-                to="/"
+                href="/"
                 onClick={handleLinkClick}
               >
                 Home
-              </Link>
+              </a>
             </li>
 
-            {/* Category dropdown (if you want to use it) */}
+            {/* Categories dropdown */}
             <li className="nav-item dropdown">
               <button
                 className="nav-link dropdown-toggle btn btn-link"
-                id="categoryDropdown"
+                id="categoriesDropdown"
                 data-bs-toggle="dropdown"
                 aria-expanded="false"
                 type="button"
               >
                 Categories
               </button>
-              <ul className="dropdown-menu" aria-labelledby="categoryDropdown">
+              <ul
+                className="dropdown-menu"
+                aria-labelledby="categoriesDropdown"
+              >
                 {categories.map((cat) => (
                   <li key={cat}>
                     <button
@@ -188,54 +207,70 @@ const Navbar = ({ onSelectCategory }) => {
               </ul>
             </li>
 
-            {/* Admin-only links */}
+            {/* My Orders (logged-in users) */}
+            {isAuthenticated && (
+              <li className="nav-item">
+                <a
+                  className="nav-link"
+                  href="/my-orders"
+                  onClick={handleLinkClick}
+                >
+                  My Orders
+                </a>
+              </li>
+            )}
+
+            {/* Admin links */}
             {isAdmin && (
               <>
                 <li className="nav-item">
-                  <Link
+                  <a
                     className="nav-link"
-                    to="/add_product"
+                    href="/add_product"
                     onClick={handleLinkClick}
                   >
                     Add Product
-                  </Link>
+                  </a>
                 </li>
 
                 <li className="nav-item">
-                  <Link
+                  <a
                     className="nav-link"
-                    to="/orders"
+                    href="/orders"
                     onClick={handleLinkClick}
                   >
                     Orders
-                  </Link>
+                  </a>
                 </li>
               </>
             )}
           </ul>
 
+          {/* RIGHT: theme, cart, search, auth */}
           <div className="d-flex align-items-center gap-3">
-            {/* Theme toggle */}
+            {/* Dark mode toggle */}
             <button
-              type="button"
               className="btn btn-outline-secondary btn-sm"
+              type="button"
               onClick={toggleTheme}
             >
               {theme === "dark-theme" ? "Light Mode" : "Dark Mode"}
             </button>
 
-            {/* Cart */}
-            <Link
-              to="/cart"
-              className="nav-link text-dark me-3 position-relative"
+            {/* Cart link with badge */}
+            <a
+              href="/cart"
+              className="nav-link text-dark position-relative"
               onClick={handleLinkClick}
             >
-              <i className="bi bi-cart me-1"></i>
+              <i className="bi bi-cart me-1" />
               Cart
-              {cartCount > 0 && (
-                <span className="badge bg-danger ms-1">{cartCount}</span>
+              {cart && cart.length > 0 && (
+                <span className="badge bg-danger rounded-pill position-absolute top-0 start-100 translate-middle">
+                  {cart.length}
+                </span>
               )}
-            </Link>
+            </a>
 
             {/* Search */}
             <form
@@ -262,7 +297,7 @@ const Navbar = ({ onSelectCategory }) => {
                     className="spinner-border spinner-border-sm"
                     role="status"
                     aria-hidden="true"
-                  ></span>
+                  />
                   <span className="visually-hidden">Loading...</span>
                 </button>
               ) : (
@@ -281,37 +316,36 @@ const Navbar = ({ onSelectCategory }) => {
               </div>
             )}
 
-            {/* Auth section */}
-            {user ? (
-              <div className="d-flex align-items-center ms-3">
-                <span className="me-2">Hi, {user}</span>
+            {/* Auth buttons / user info */}
+            {isAuthenticated ? (
+              <div className="d-flex align-items-center gap-2 ms-2">
+                <span className="text-muted small">
+                  Hi, <strong>{user}</strong>
+                </span>
                 <button
                   className="btn btn-outline-danger btn-sm"
-                  onClick={() => {
-                    logout();
-                    handleLinkClick();
-                    navigate("/");
-                  }}
+                  type="button"
+                  onClick={handleLogout}
                 >
                   Logout
                 </button>
               </div>
             ) : (
-              <div className="d-flex align-items-center ms-3">
-                <Link
-                  to="/login"
-                  className="btn btn-outline-primary btn-sm me-2"
-                  onClick={handleLinkClick}
+              <div className="d-flex align-items-center gap-2 ms-2">
+                <button
+                  className="btn btn-outline-primary btn-sm"
+                  type="button"
+                  onClick={goToLogin}
                 >
                   Login
-                </Link>
-                <Link
-                  to="/register"
+                </button>
+                <button
                   className="btn btn-primary btn-sm"
-                  onClick={handleLinkClick}
+                  type="button"
+                  onClick={goToRegister}
                 >
                   Register
-                </Link>
+                </button>
               </div>
             )}
           </div>

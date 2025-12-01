@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import api from "../axios.jsx";
+import { toast } from "react-toastify";
 
 const Order = () => {
   const [orders, setOrders] = useState([]);
@@ -7,20 +8,29 @@ const Order = () => {
   const [error, setError] = useState(null);
   const [expandedOrder, setExpandedOrder] = useState(null);
 
-  useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        // JWT is added automatically by axios interceptor
-        const response = await api.get("/api/orders");
-        setOrders(response.data);
-        setLoading(false);
-      } catch (error) {
-        console.log(error);
-        setError("Failed to fetch orders. Please try again later.");
-        setLoading(false);
-      }
-    };
+  const statusOptions = [
+    "PLACED",
+    "ACCEPTED",
+    "PACKED",
+    "SHIPPED",
+    "DELIVERED",
+    "CANCELLED",
+  ];
 
+  const fetchOrders = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get("/api/orders");
+      setOrders(response.data);
+      setLoading(false);
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+      setError("Failed to fetch orders. Please try again later.");
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchOrders();
   }, []);
 
@@ -32,8 +42,12 @@ const Order = () => {
     switch (status) {
       case "PLACED":
         return "bg-info";
-      case "SHIPPED":
+      case "ACCEPTED":
         return "bg-primary";
+      case "PACKED":
+        return "bg-secondary";
+      case "SHIPPED":
+        return "bg-warning text-dark";
       case "DELIVERED":
         return "bg-success";
       case "CANCELLED":
@@ -53,6 +67,25 @@ const Order = () => {
 
   const calculateOrderTotal = (items) => {
     return items.reduce((total, item) => total + item.totalPrice, 0);
+  };
+
+  const handleStatusChange = async (orderId, newStatus) => {
+    try {
+      await api.put(`/api/orders/${orderId}/status`, null, {
+        params: { status: newStatus },
+      });
+      toast.success("Order status updated!");
+
+      // update local state so UI changes immediately
+      setOrders((prev) =>
+        prev.map((o) =>
+          o.orderId === orderId ? { ...o, status: newStatus } : o
+        )
+      );
+    } catch (error) {
+      console.error("Error updating status:", error);
+      toast.error("Failed to update status");
+    }
   };
 
   if (loading) {
@@ -82,7 +115,7 @@ const Order = () => {
 
   return (
     <div className="container mt-5 pt-5">
-      <h2 className="text-center mb-4">Order Management</h2>
+      <h2 className="text-center mb-4">Order Management (Admin)</h2>
 
       <div className="card shadow mb-4">
         <div className="card-header bg-primary text-white">
@@ -100,7 +133,7 @@ const Order = () => {
                   <th>Status</th>
                   <th>Items</th>
                   <th>Total</th>
-                  <th>Actions</th>
+                  <th>Details</th>
                 </tr>
               </thead>
               <tbody>
@@ -127,11 +160,31 @@ const Order = () => {
                             : "N/A"}
                         </td>
                         <td>
-                          <span
-                            className={`badge ${getStatusClass(order.status)}`}
-                          >
-                            {order.status}
-                          </span>
+                          <div className="d-flex flex-column gap-1">
+                            <span
+                              className={`badge ${getStatusClass(
+                                order.status
+                              )}`}
+                            >
+                              {order.status}
+                            </span>
+                            <select
+                              className="form-select form-select-sm"
+                              value={order.status}
+                              onChange={(e) =>
+                                handleStatusChange(
+                                  order.orderId, // 🔹 IMPORTANT: use orderId, not id
+                                  e.target.value
+                                )
+                              }
+                            >
+                              {statusOptions.map((status) => (
+                                <option key={status} value={status}>
+                                  {status}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
                         </td>
                         <td>{order.items.length}</td>
                         <td className="fw-bold">
@@ -148,6 +201,7 @@ const Order = () => {
                           </button>
                         </td>
                       </tr>
+
                       {expandedOrder === order.orderId && (
                         <tr>
                           <td colSpan="7" className="p-0">

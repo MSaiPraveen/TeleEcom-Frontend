@@ -1,88 +1,134 @@
-// src/App.jsx
-import React, { useState, useContext } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import React, { useState, useContext } from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { ToastContainer } from 'react-toastify';
 
-import Home from "./components/Home";
-import Navbar from "./components/Navbar";
-import Cart from "./components/Cart";
-import AddProduct from "./components/AddProduct";
-import Product from "./components/Product";
-import UpdateProduct from "./components/UpdateProduct";
-import Order from "./components/Order";
-import SearchResults from "./components/SearchResults";
-import Login from "./components/Login";
-import Register from "./components/Register";
+// Layout
+import Navbar from './components/layout/Navbar';
 
-import { AppContext } from "./Context/Context";
+// Auth Pages
+import Login from './components/auth/Login';
+import Register from './components/auth/Register';
+import OAuth2Success from "./components/auth/OAuth2Success.jsx";
 
-import "bootstrap/dist/css/bootstrap.min.css";
-import "bootstrap/dist/js/bootstrap.bundle.min.js";
-import { ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+
+// Pages
+import {
+  Home,
+  Cart,
+  Product,
+  SearchResults,
+  AddProduct,
+  UpdateProduct,
+  Order,
+  MyOrders,
+} from './components/pages';
+
+// Context
+import { AppContext } from './Context/Context';
+
+// Styles
+import 'react-toastify/dist/ReactToastify.css';
+import './index.css';
 
 function App() {
-  const [selectedCategory, setSelectedCategory] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState('');
 
   const handleCategorySelect = (category) => {
     setSelectedCategory(category);
   };
 
+  const handleClearCategory = () => {
+    setSelectedCategory('');
+  };
+
   return (
-    <>
-      <ToastContainer autoClose={2000} hideProgressBar />
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 transition-colors duration-300">
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="colored"
+        toastClassName="!rounded-xl !shadow-lg"
+      />
+
       <Navbar onSelectCategory={handleCategorySelect} />
 
-      <div className="min-vh-100 bg-light" style={{ paddingTop: "70px" }}>
-        <Routes>
-          {/* Public */}
-          <Route
-            path="/"
-            element={<Home selectedCategory={selectedCategory} />}
-          />
-          <Route path="/product" element={<Product />} />
-          <Route path="/product/:id" element={<Product />} />
-          <Route path="/cart" element={<Cart />} />
-          <Route path="/search-results" element={<SearchResults />} />
+      <Routes>
+        {/* Public routes */}
+        <Route
+          path="/"
+          element={<Home selectedCategory={selectedCategory} onClearCategory={handleClearCategory} />}
+        />
+        <Route path="/product" element={<Product />} />
+        <Route path="/product/:id" element={<Product />} />
+        <Route path="/cart" element={<Cart />} />
+        <Route path="/search-results" element={<SearchResults />} />
 
-          {/* Auth */}
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
+        {/* Auth routes */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/oauth2/success" element={<OAuth2Success />} />
 
-          {/* Admin-only */}
-          <Route
-            path="/add_product"
-            element={
-              <RequireAdmin>
-                <AddProduct />
-              </RequireAdmin>
-            }
-          />
-          <Route
-            path="/product/update/:id"
-            element={
-              <RequireAdmin>
-                <UpdateProduct />
-              </RequireAdmin>
-            }
-          />
-          <Route
-            path="/orders"
-            element={
-              <RequireAdmin>
-                <Order />
-              </RequireAdmin>
-            }
-          />
 
-          {/* Fallback */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </div>
-    </>
+        {/* User routes (must be logged in) */}
+        <Route
+          path="/my-orders"
+          element={
+            <RequireAuth>
+              <MyOrders />
+            </RequireAuth>
+          }
+        />
+
+        {/* Admin-only routes */}
+        <Route
+          path="/add_product"
+          element={
+            <RequireAdmin>
+              <AddProduct />
+            </RequireAdmin>
+          }
+        />
+        <Route
+          path="/product/update/:id"
+          element={
+            <RequireAdmin>
+              <UpdateProduct />
+            </RequireAdmin>
+          }
+        />
+        <Route
+          path="/orders"
+          element={
+            <RequireAdmin>
+              <Order />
+            </RequireAdmin>
+          }
+        />
+
+        {/* Fallback */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </div>
   );
 }
 
-/** Guard for admin-only pages */
+/* ---------- Route Guards ---------- */
+
+const RequireAuth = ({ children }) => {
+  const { isAuthenticated } = useContext(AppContext);
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+  return children;
+};
+
 const RequireAdmin = ({ children }) => {
   const { isAdmin, isAuthenticated } = useContext(AppContext);
 
