@@ -24,6 +24,7 @@ const api = axios.create({
   baseURL,
 });
 
+// Add token to all requests
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
   if (token) {
@@ -31,5 +32,23 @@ api.interceptors.request.use((config) => {
   }
   return config;
 });
+
+// Handle 401 responses globally - clear invalid tokens
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // Token is invalid or expired - clear it
+      localStorage.removeItem("token");
+      localStorage.removeItem("username");
+      localStorage.removeItem("isAdmin");
+      // Optionally redirect to login
+      if (window.location.pathname !== "/login" && window.location.pathname !== "/register") {
+        window.location.href = "/login";
+      }
+    }
+    return Promise.reject(error);
+  }
+);
 
 export default api;
