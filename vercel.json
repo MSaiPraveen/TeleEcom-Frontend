@@ -1,5 +1,5 @@
 {
   "rewrites": [
-    { "source": "/((?!assets|api|oauth2).*)", "destination": "/index.html" }
+    { "source": "/((?!assets).*)", "destination": "/index.html" }
   ]
 }
