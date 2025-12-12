@@ -1,14 +1,5 @@
 {
-  "version": 2,
-  "builds": [
-    { "src": "package.json", "use": "@vercel/static-build", "config": { "distDir": "dist" } }
-  ],
   "rewrites": [
-    { "source": "/api/:path*", "destination": "https://springteleecom.onrender.com/:path*" },
-    { "source": "/oauth2/:path*", "destination": "https://springteleecom.onrender.com/oauth2/:path*" }
-  ],
-  "routes": [
-    { "src": "/oauth2/success", "dest": "/index.html" },
-    { "src": "(.*)", "dest": "/index.html" }
+    { "source": "/((?!assets|api|oauth2).*)", "destination": "/index.html" }
   ]
 }
