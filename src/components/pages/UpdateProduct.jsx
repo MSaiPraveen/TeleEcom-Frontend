@@ -45,14 +45,14 @@ const UpdateProduct = () => {
   useEffect(() => {
     const fetchProduct = async () => {
       try {
-        const response = await api.get(`/api/product/${id}`);
+        const response = await api.get(`/product/${id}`);
         const prod = response.data;
 
         setProduct(prod);
         setUpdateProduct(prod);
 
         if (prod.imageName) {
-          const responseImage = await api.get(`/api/product/${id}/image`, {
+          const responseImage = await api.get(`/product/${id}/image`, {
             responseType: 'blob',
           });
           const imageFile = await convertUrlToFile(responseImage.data, prod.imageName);
@@ -112,7 +112,7 @@ const UpdateProduct = () => {
         })
       );
 
-      await api.put(`/api/product/${id}`, formData, {
+      await api.put(`/product/${id}`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 

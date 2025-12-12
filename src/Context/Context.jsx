@@ -45,7 +45,7 @@ const ContextProvider = ({ children }) => {
   const fetchProducts = async () => {
     try {
       setProductsLoading(true);
-      const res = await api.get("/api/product");
+      const res = await api.get("/product");
       // Ensure we always set an array (handle error responses)
       setProducts(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
@@ -128,7 +128,7 @@ const ContextProvider = ({ children }) => {
         quantity: item.quantity,
       }));
 
-      const res = await api.post("/api/orders", {
+      const res = await api.post("/orders", {
         customerName,
         email,
         items,

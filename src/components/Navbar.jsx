@@ -49,7 +49,7 @@ const Navbar = ({ onSelectCategory }) => {
   // Initial data fetch (optional)
   const fetchInitialData = async () => {
     try {
-      const response = await axios.get(`${baseUrl}/api/product`);
+      const response = await axios.get(`${baseUrl}/product`);
       console.log(response.data, "navbar initial data");
     } catch (error) {
       console.error("Error fetching initial data:", error);
@@ -78,7 +78,7 @@ const Navbar = ({ onSelectCategory }) => {
 
     try {
       const response = await axios.get(
-        `${baseUrl}/api/product/search?keyword=${input}`
+        `${baseUrl}/product/search?keyword=${input}`
       );
 
       if (response.data.length === 0) {

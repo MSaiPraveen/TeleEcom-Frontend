@@ -24,7 +24,7 @@ const Order = () => {
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/api/orders');
+      const response = await api.get('/orders');
       setOrders(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
       console.error('Error fetching orders:', error);
@@ -76,7 +76,7 @@ const Order = () => {
 
   const handleStatusChange = async (orderId, newStatus) => {
     try {
-      await api.put(`/api/orders/${orderId}/status`, null, {
+      await api.put(`/orders/${orderId}/status`, null, {
         params: { status: newStatus },
       });
       toast.success('Order status updated!');

@@ -77,7 +77,7 @@ const Navbar = ({ onSelectCategory }) => {
 
     setIsLoading(true);
     try {
-      const response = await axios.get(`${baseUrl}/api/product/search?keyword=${input}`);
+      const response = await axios.get(`${baseUrl}/product/search?keyword=${input}`);
       navigate('/search-results', { state: { searchData: response.data } });
     } catch (error) {
       console.error('Search error:', error);

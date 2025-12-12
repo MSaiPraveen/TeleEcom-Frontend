@@ -34,7 +34,7 @@ const UpdateProduct = () => {
   useEffect(() => {
     const fetchProduct = async () => {
       try {
-        const response = await api.get(`/api/product/${id}`);
+        const response = await api.get(`/product/${id}`);
         const prod = response.data;
 
         setProduct(prod);
@@ -42,7 +42,7 @@ const UpdateProduct = () => {
 
         // fetch image blob and convert to File
         if (prod.imageName) {
-          const responseImage = await api.get(`/api/product/${id}/image`, {
+          const responseImage = await api.get(`/product/${id}/image`, {
             responseType: "blob",
           });
           const imageFile = await converUrlToFile(
@@ -115,7 +115,7 @@ const UpdateProduct = () => {
 
       console.log("Update formData:", normalizedProduct);
 
-      await api.put(`/api/product/${id}`, formData, {
+      await api.put(`/product/${id}`, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },

@@ -12,7 +12,7 @@ const MyOrders = () => {
   const fetchMyOrders = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/api/orders/my');
+      const response = await api.get('/orders/my');
       setOrders(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
       console.error('Failed to fetch my orders:', error);

@@ -23,7 +23,7 @@ const Register = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await api.post("/api/auth/register", form);
+      const res = await api.post("/auth/register", form);
       // backend returns { token, username, admin:false }
       login(res.data.token, res.data.username, res.data.admin);
       navigate("/");

@@ -28,7 +28,7 @@ const Product = () => {
 
     const fetchProduct = async () => {
       try {
-        const res = await api.get(`/api/product/${id}`);
+        const res = await api.get(`/product/${id}`);
         setProduct(res.data);
 
         if (res.data.imageName) {
@@ -45,7 +45,7 @@ const Product = () => {
 
     const fetchImage = async () => {
       try {
-        const res = await api.get(`/api/product/${id}/image`, {
+        const res = await api.get(`/product/${id}/image`, {
           responseType: 'blob',
         });
         setImageUrl(URL.createObjectURL(res.data));
@@ -61,7 +61,7 @@ const Product = () => {
   const deleteProduct = async () => {
     setIsDeleting(true);
     try {
-      await api.delete(`/api/product/${id}`);
+      await api.delete(`/product/${id}`);
       removeFromCart(Number(id));
       toast.success('Product deleted successfully');
       navigate('/');
