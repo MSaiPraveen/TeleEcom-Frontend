@@ -259,7 +259,7 @@ const UpdateProduct = () => {
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <Input
-                    label="Price (₹)"
+                    label="Price ($)"
                     name="price"
                     type="number"
                     placeholder="0.00"
@@ -267,7 +267,7 @@ const UpdateProduct = () => {
                     onChange={handleChange}
                     error={errors.price}
                     required
-                    leftIcon={<span className="text-slate-500 font-medium">₹</span>}
+                    leftIcon={<span className="text-slate-500 font-medium">$</span>}
                   />
 
                   <Input

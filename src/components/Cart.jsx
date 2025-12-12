@@ -141,7 +141,7 @@ const Cart = () => {
                                 </div>
                               </div>
                             </td>
-                            <td>₹ {item.price}</td>
+                            <td>$ {item.price}</td>
                             <td>
                               <div
                                 className="input-group input-group-sm"
@@ -174,7 +174,7 @@ const Cart = () => {
                               </div>
                             </td>
                             <td className="fw-bold">
-                              ₹ {(item.price * item.quantity).toFixed(2)}
+                              $ {(item.price * item.quantity).toFixed(2)}
                             </td>
                             <td>
                               <button
@@ -194,7 +194,7 @@ const Cart = () => {
                     <div className="card-body">
                       <div className="d-flex justify-content-between align-items-center">
                         <h5 className="mb-0">Total:</h5>
-                        <h5 className="mb-0">₹ {totalPrice.toFixed(2)}</h5>
+                        <h5 className="mb-0">$ {totalPrice.toFixed(2)}</h5>
                       </div>
                     </div>
                   </div>

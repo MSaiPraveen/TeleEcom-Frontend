@@ -225,7 +225,7 @@ const AddProduct = () => {
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <Input
-                    label="Price (₹)"
+                    label="Price ($)"
                     name="price"
                     type="number"
                     placeholder="0.00"
@@ -234,7 +234,7 @@ const AddProduct = () => {
                     error={errors.price}
                     required
                     leftIcon={
-                      <span className="text-slate-500 font-medium">₹</span>
+                      <span className="text-slate-500 font-medium">$</span>
                     }
                   />
 

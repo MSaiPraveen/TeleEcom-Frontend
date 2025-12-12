@@ -255,7 +255,7 @@ const Register = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
               </div>
-              <span className="text-white/90">Free shipping on orders over ₹500</span>
+              <span className="text-white/90">Free shipping on orders over $50</span>
             </div>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">

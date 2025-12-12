@@ -193,7 +193,7 @@ const SearchResultCard = ({ product, onAddToCart, convertImage }) => {
           
           <div className="mt-4 flex items-center justify-between">
             <span className="text-xl font-bold text-slate-900 dark:text-white">
-              ₹{price.toLocaleString('en-IN')}
+              ${price.toLocaleString('en-US')}
             </span>
             {stockQuantity > 0 && stockQuantity <= 5 && (
               <Badge variant="warning" size="sm">

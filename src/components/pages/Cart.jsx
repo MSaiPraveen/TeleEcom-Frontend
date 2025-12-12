@@ -99,8 +99,8 @@ const Cart = () => {
   };
 
   const subtotal = totalPrice;
-  const shipping = totalPrice > 999 ? 0 : 99;
-  const tax = Math.round(totalPrice * 0.18);
+  const shipping = totalPrice > 99 ? 0 : 10;
+  const tax = Math.round(totalPrice * 0.08);
   const grandTotal = subtotal + shipping + tax;
 
   return (
@@ -194,23 +194,23 @@ const Cart = () => {
                 <div className="space-y-4">
                   <div className="flex justify-between text-slate-600 dark:text-slate-400">
                     <span>Subtotal</span>
-                    <span>₹{subtotal.toLocaleString('en-IN')}</span>
+                    <span>${subtotal.toLocaleString('en-US')}</span>
                   </div>
                   <div className="flex justify-between text-slate-600 dark:text-slate-400">
                     <span>Shipping</span>
                     <span className={shipping === 0 ? 'text-emerald-600 dark:text-emerald-400' : ''}>
-                      {shipping === 0 ? 'Free' : `₹${shipping}`}
+                      {shipping === 0 ? 'Free' : `$${shipping}`}
                     </span>
                   </div>
                   <div className="flex justify-between text-slate-600 dark:text-slate-400">
-                    <span>GST (18%)</span>
-                    <span>₹{tax.toLocaleString('en-IN')}</span>
+                    <span>Tax (8%)</span>
+                    <span>${tax.toLocaleString('en-US')}</span>
                   </div>
                   
                   <div className="border-t border-slate-200 dark:border-slate-700 pt-4">
                     <div className="flex justify-between text-lg font-semibold text-slate-900 dark:text-white">
                       <span>Total</span>
-                      <span>₹{grandTotal.toLocaleString('en-IN')}</span>
+                      <span>${grandTotal.toLocaleString('en-US')}</span>
                     </div>
                   </div>
 
@@ -219,7 +219,7 @@ const Cart = () => {
                       <svg className="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
-                      Add ₹{(1000 - subtotal).toLocaleString('en-IN')} more for free shipping
+                      Add ${(100 - subtotal).toLocaleString('en-US')} more for free shipping
                     </div>
                   )}
                 </div>
@@ -330,20 +330,20 @@ const Cart = () => {
           <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-4 space-y-2">
             <div className="flex justify-between text-sm text-slate-600 dark:text-slate-400">
               <span>Subtotal ({cartItems.length} items)</span>
-              <span>₹{subtotal.toLocaleString('en-IN')}</span>
+              <span>${subtotal.toLocaleString('en-US')}</span>
             </div>
             <div className="flex justify-between text-sm text-slate-600 dark:text-slate-400">
               <span>Shipping</span>
-              <span>{shipping === 0 ? 'Free' : `₹${shipping}`}</span>
+              <span>{shipping === 0 ? 'Free' : `$${shipping}`}</span>
             </div>
             <div className="flex justify-between text-sm text-slate-600 dark:text-slate-400">
-              <span>Tax (GST 18%)</span>
-              <span>₹{tax.toLocaleString('en-IN')}</span>
+              <span>Tax (8%)</span>
+              <span>${tax.toLocaleString('en-US')}</span>
             </div>
             <div className="border-t border-slate-200 dark:border-slate-700 pt-2 mt-2">
               <div className="flex justify-between font-semibold text-slate-900 dark:text-white">
                 <span>Total</span>
-                <span>₹{grandTotal.toLocaleString('en-IN')}</span>
+                <span>${grandTotal.toLocaleString('en-US')}</span>
               </div>
             </div>
           </div>
@@ -402,7 +402,7 @@ const CartItem = ({ item, onIncrease, onDecrease, onRemove, convertImage }) => {
             </p>
           </div>
           <p className="font-semibold text-slate-900 dark:text-white sm:hidden">
-            ₹{(item.price * item.quantity).toLocaleString('en-IN')}
+            ${(item.price * item.quantity).toLocaleString('en-US')}
           </p>
         </div>
 
@@ -450,10 +450,10 @@ const CartItem = ({ item, onIncrease, onDecrease, onRemove, convertImage }) => {
       {/* Price (Desktop) */}
       <div className="hidden sm:block text-right">
         <p className="font-semibold text-slate-900 dark:text-white">
-          ₹{(item.price * item.quantity).toLocaleString('en-IN')}
+          ${(item.price * item.quantity).toLocaleString('en-US')}
         </p>
         <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-          ₹{item.price.toLocaleString('en-IN')} each
+          ${item.price.toLocaleString('en-US')} each
         </p>
       </div>
     </div>

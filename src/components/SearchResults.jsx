@@ -102,8 +102,8 @@ const SearchResults = () => {
                         : product.description}
                     </p>
                     <h5 className="card-text text-primary mt-auto mb-3">
-                      ₹
-                      {Number(product.price).toLocaleString("en-IN", {
+                      $
+                      {Number(product.price).toLocaleString("en-US", {
                         maximumFractionDigits: 2,
                       })}
                     </h5>

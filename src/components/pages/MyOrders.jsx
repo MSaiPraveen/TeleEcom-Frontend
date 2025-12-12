@@ -94,9 +94,9 @@ const MyOrders = () => {
   };
 
   const formatCurrency = (amount) =>
-    new Intl.NumberFormat('en-IN', {
+    new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'INR',
+      currency: 'USD',
       maximumFractionDigits: 0,
     }).format(amount);
 
