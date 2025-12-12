@@ -46,9 +46,11 @@ const ContextProvider = ({ children }) => {
     try {
       setProductsLoading(true);
       const res = await api.get("/api/product");
-      setProducts(res.data);
+      // Ensure we always set an array (handle error responses)
+      setProducts(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.error("Failed to load products:", err);
+      setProducts([]); // Reset to empty array on error
       toast.error("Failed to load products");
     } finally {
       setProductsLoading(false);
