@@ -1,10 +1,13 @@
 // src/components/pages/MyOrders.jsx
-import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect, useState, useContext } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import api from '../../axios.jsx';
+import { AppContext } from '../../Context/Context.jsx';
 import { Card, Button, Badge, Spinner } from '../ui';
 
 const MyOrders = () => {
+  const { isAuthenticated } = useContext(AppContext);
+  const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
   const [expandedOrder, setExpandedOrder] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -23,8 +26,12 @@ const MyOrders = () => {
   };
 
   useEffect(() => {
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
     fetchMyOrders();
-  }, []);
+  }, [isAuthenticated, navigate]);
 
   const toggleDetails = (orderId) => {
     setExpandedOrder((prev) => (prev === orderId ? null : orderId));

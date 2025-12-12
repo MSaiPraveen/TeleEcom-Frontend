@@ -1,9 +1,13 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
+import { useNavigate } from "react-router-dom";
 import api from "../axios.jsx";
+import { AppContext } from "../Context/Context.jsx";
 
-const TAX_RATE = 0.18; // 18% tax (change if needed)
+const TAX_RATE = 0.08; // 8% tax (US)
 
 const MyOrders = () => {
+  const { isAuthenticated } = useContext(AppContext);
+  const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
   const [expandedOrder, setExpandedOrder] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -22,8 +26,12 @@ const MyOrders = () => {
   };
 
   useEffect(() => {
+    if (!isAuthenticated) {
+      navigate("/login");
+      return;
+    }
     fetchMyOrders();
-  }, []);
+  }, [isAuthenticated, navigate]);
 
   const toggleDetails = (orderId) => {
     setExpandedOrder((prev) => (prev === orderId ? null : orderId));
