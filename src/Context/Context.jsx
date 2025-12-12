@@ -15,7 +15,7 @@ const ContextProvider = ({ children }) => {
 
   /* ------------ PRODUCTS ------------ */
   const [products, setProducts] = useState([]);
-  const [productsLoading, setProductsLoading] = useState(false);
+  const [productsLoading, setProductsLoading] = useState(true);
 
   /* ------------ CART ------------ */
   const [cart, setCart] = useState(() => {

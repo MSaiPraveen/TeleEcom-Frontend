@@ -218,7 +218,7 @@ const Order = () => {
                                     </tr>
                                   </thead>
                                   <tbody>
-                                    {order.items.map((item, index) => (
+                                    {(order.items || []).map((item, index) => (
                                       <tr key={index}>
                                         <td>{item.productName}</td>
                                         <td className="text-center">

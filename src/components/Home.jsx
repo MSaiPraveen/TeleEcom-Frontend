@@ -45,8 +45,8 @@ const Home = ({ selectedCategory }) => {
   };
 
   const filteredProducts = selectedCategory
-    ? products.filter((product) => product.category === selectedCategory)
-    : products;
+    ? (products || []).filter((product) => product.category === selectedCategory)
+    : (products || []);
 
   if (productsLoading) {
     return (

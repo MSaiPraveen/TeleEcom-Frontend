@@ -33,8 +33,8 @@ const Home = ({ selectedCategory, onClearCategory }) => {
   };
 
   const filteredProducts = selectedCategory
-    ? products.filter((p) => p.category?.toLowerCase() === selectedCategory.toLowerCase())
-    : products;
+    ? (products || []).filter((p) => p.category?.toLowerCase() === selectedCategory.toLowerCase())
+    : (products || []);
 
   if (productsLoading) {
     return (

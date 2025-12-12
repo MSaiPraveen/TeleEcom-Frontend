@@ -227,14 +227,14 @@ const MyOrders = () => {
                 </div>
 
                 {/* Order Details */}
-                {expandedOrder === order.orderId && (
+                {expandedOrder === order.orderId && (order.items || []).length > 0 && (
                   <div className="p-4 sm:p-6 bg-slate-50 dark:bg-slate-800/50">
                     <h4 className="text-sm font-semibold text-slate-900 dark:text-white mb-4 uppercase tracking-wider">
-                      Order Items ({order.items.length})
+                      Order Items ({(order.items || []).length})
                     </h4>
                     
                     <div className="space-y-3">
-                      {order.items.map((item, index) => (
+                      {(order.items || []).map((item, index) => (
                         <div
                           key={index}
                           className="flex items-center justify-between p-3 bg-white dark:bg-slate-800 rounded-xl"

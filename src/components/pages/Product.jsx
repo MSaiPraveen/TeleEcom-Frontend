@@ -84,7 +84,7 @@ const Product = () => {
   const isOutOfStock = !product?.productAvailable || product?.stockQuantity === 0;
 
   // Get related products
-  const relatedProducts = products
+  const relatedProducts = (products || [])
     .filter(p => p.category === product?.category && p.id !== product?.id)
     .slice(0, 4);
 

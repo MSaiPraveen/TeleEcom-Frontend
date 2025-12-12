@@ -92,7 +92,7 @@ const Order = () => {
   };
 
   // Filter orders
-  const filteredOrders = orders.filter((order) => {
+  const filteredOrders = (orders || []).filter((order) => {
     const matchesSearch =
       order.customerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       order.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -103,10 +103,10 @@ const Order = () => {
 
   // Stats
   const stats = {
-    total: orders.length,
-    pending: orders.filter((o) => ['PLACED', 'ACCEPTED', 'PACKED'].includes(o.status)).length,
-    shipped: orders.filter((o) => o.status === 'SHIPPED').length,
-    delivered: orders.filter((o) => o.status === 'DELIVERED').length,
+    total: (orders || []).length,
+    pending: (orders || []).filter((o) => ['PLACED', 'ACCEPTED', 'PACKED'].includes(o.status)).length,
+    shipped: (orders || []).filter((o) => o.status === 'SHIPPED').length,
+    delivered: (orders || []).filter((o) => o.status === 'DELIVERED').length,
   };
 
   if (loading) {
@@ -365,12 +365,12 @@ const OrderRow = ({
       </div>
 
       {/* Expanded Details */}
-      {isExpanded && (
+      {isExpanded && (order.items || []).length > 0 && (
         <div className="px-4 pb-4">
           <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4">
             <h4 className="font-semibold text-slate-900 dark:text-white mb-4">Order Items</h4>
             <div className="space-y-3">
-              {order.items.map((item, index) => (
+              {(order.items || []).map((item, index) => (
                 <div
                   key={index}
                   className="flex items-center justify-between py-2 border-b border-slate-200 dark:border-slate-700 last:border-0"

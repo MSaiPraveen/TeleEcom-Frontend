@@ -31,7 +31,7 @@ const Navbar = ({ onSelectCategory }) => {
   const categoryMenuRef = useRef(null);
 
   // Get unique categories from actual products
-  const categories = [...new Set(products?.map(p => p.category).filter(Boolean))];
+  const categories = [...new Set((products || []).map(p => p.category).filter(Boolean))];
 
   // Handle dark mode toggle
   const toggleDarkMode = () => {
