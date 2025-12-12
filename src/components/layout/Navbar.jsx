@@ -8,7 +8,8 @@ import { Button, Input } from '../ui';
 const Navbar = ({ onSelectCategory }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const baseUrl = import.meta.env.VITE_BASE_URL;
+  const baseUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_BASE_URL || 'https://springteleecom.onrender.com';
+  const USE_PROXY = (import.meta.env.VITE_USE_PROXY || 'false') === 'true';
   
   const { cart, isAuthenticated, isAdmin, user, logout, products } = useContext(AppContext);
   

@@ -35,7 +35,7 @@ cd TeleEcom-Frontend
 cp .env.example .env
 
 # Edit .env with your configuration
-# VITE_BASE_URL - Your backend API URL
+# VITE_API_URL - Your backend API URL
 ```
 
 ### 3. Install dependencies
@@ -93,7 +93,7 @@ This frontend is designed to work with the [TeleEcom Backend](https://github.com
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `VITE_BASE_URL` | Backend API URL | `http://localhost:8080` |
+| `VITE_API_URL` | Backend API URL | `http://localhost:8080` |
 
 ## 📜 Available Scripts
 

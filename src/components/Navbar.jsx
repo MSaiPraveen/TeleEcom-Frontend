@@ -24,7 +24,8 @@ const Navbar = ({ onSelectCategory }) => {
   const navbarRef = useRef(null);
 
   const navigate = useNavigate();
-  const baseUrl = import.meta.env.VITE_BASE_URL;
+  const baseUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_BASE_URL || 'https://springteleecom.onrender.com';
+  const USE_PROXY = (import.meta.env.VITE_USE_PROXY || 'false') === 'true';
 
   // 🔹 context
   const { cart, isAuthenticated, isAdmin, user, logout } =
