@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect } from "react";
+import React, { useContext, useState } from "react";
 import { AppContext } from "../Context/Context";
 import CheckoutPopup from "./CheckoutPopup";
 import { Button } from "react-bootstrap";
@@ -6,57 +6,32 @@ import { toast } from "react-toastify";
 import unplugged from "../assets/unplugged.png";
 
 const Cart = () => {
-  const { cart, removeFromCart, clearCart, placeOrder } = useContext(AppContext);
+  const { cart, removeFromCart, clearCart, placeOrder, updateCartQuantity, cartTotal } = useContext(AppContext);
 
-  const [cartItems, setCartItems] = useState([]);
-  const [totalPrice, setTotalPrice] = useState(0);
   const [showModal, setShowModal] = useState(false);
 
-  // When global cart changes, sync local cartItems
-  useEffect(() => {
-    if (cart.length) {
-      setCartItems(cart);
-    } else {
-      setCartItems([]);
-    }
-  }, [cart]);
-
-  // Recalculate total whenever cartItems change
-  useEffect(() => {
-    const total = cartItems.reduce(
-      (acc, item) => acc + item.price * item.quantity,
-      0
-    );
-    setTotalPrice(total);
-  }, [cartItems]);
+  // Use global cart directly
+  const cartItems = cart || [];
+  const totalPrice = cartTotal;
 
   const handleIncreaseQuantity = (itemId) => {
-    const newCartItems = cartItems.map((item) => {
-      if (item.id === itemId) {
-        if (item.quantity < item.stockQuantity) {
-          return { ...item, quantity: item.quantity + 1 };
-        } else {
-          toast.info("Cannot add more than available stock");
-        }
-      }
-      return item;
-    });
-    setCartItems(newCartItems);
+    const item = cartItems.find((i) => i.id === itemId);
+    if (item && item.quantity < item.stockQuantity) {
+      updateCartQuantity(itemId, item.quantity + 1);
+    } else {
+      toast.info("Cannot add more than available stock");
+    }
   };
 
   const handleDecreaseQuantity = (itemId) => {
-    const newCartItems = cartItems.map((item) =>
-      item.id === itemId
-        ? { ...item, quantity: Math.max(item.quantity - 1, 1) }
-        : item
-    );
-    setCartItems(newCartItems);
+    const item = cartItems.find((i) => i.id === itemId);
+    if (item && item.quantity > 1) {
+      updateCartQuantity(itemId, item.quantity - 1);
+    }
   };
 
   const handleRemoveFromCart = (itemId) => {
     removeFromCart(itemId);
-    const newCartItems = cartItems.filter((item) => item.id !== itemId);
-    setCartItems(newCartItems);
   };
 
   const convertBase64ToDataURL = (base64String, mimeType = "image/jpeg") => {
@@ -77,9 +52,7 @@ const Cart = () => {
         return;
       }
 
-      await placeOrder(customerName, email); // uses /api/orders on backend
-      clearCart();              // clear global cart
-      setCartItems([]);         // clear local view
+      await placeOrder(customerName, email); // placeOrder already clears cart
       setShowModal(false);
     } catch (error) {
       console.error("Error during checkout", error);

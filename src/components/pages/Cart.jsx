@@ -7,10 +7,8 @@ import { toast } from 'react-toastify';
 import unplugged from '../../assets/unplugged.png';
 
 const Cart = () => {
-  const { cart, removeFromCart, clearCart, placeOrder, isLoggedIn, user } = useContext(AppContext);
+  const { cart, removeFromCart, clearCart, placeOrder, isAuthenticated, user, updateCartQuantity, cartTotal } = useContext(AppContext);
 
-  const [cartItems, setCartItems] = useState([]);
-  const [totalPrice, setTotalPrice] = useState(0);
   const [showCheckout, setShowCheckout] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [checkoutForm, setCheckoutForm] = useState({
@@ -20,52 +18,39 @@ const Cart = () => {
     phone: ''
   });
 
-  // Sync with global cart
-  useEffect(() => {
-    setCartItems(cart.length ? cart : []);
-  }, [cart]);
-
-  // Calculate total
-  useEffect(() => {
-    const total = cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
-    setTotalPrice(total);
-  }, [cartItems]);
+  // Use cart directly instead of local state
+  const cartItems = cart || [];
+  const totalPrice = cartTotal;
 
   // Pre-fill checkout form if user is logged in
   useEffect(() => {
-    if (isLoggedIn && user) {
+    if (isAuthenticated && user) {
       setCheckoutForm(prev => ({
         ...prev,
-        customerName: user.name || '',
-        email: user.email || ''
+        customerName: user || '',
+        email: ''
       }));
     }
-  }, [isLoggedIn, user]);
+  }, [isAuthenticated, user]);
 
   const handleIncreaseQuantity = (itemId) => {
-    setCartItems(items => items.map(item => {
-      if (item.id === itemId) {
-        if (item.quantity < item.stockQuantity) {
-          return { ...item, quantity: item.quantity + 1 };
-        } else {
-          toast.info('Cannot add more than available stock');
-        }
-      }
-      return item;
-    }));
+    const item = cartItems.find(i => i.id === itemId);
+    if (item && item.quantity < item.stockQuantity) {
+      updateCartQuantity(itemId, item.quantity + 1);
+    } else {
+      toast.info('Cannot add more than available stock');
+    }
   };
 
   const handleDecreaseQuantity = (itemId) => {
-    setCartItems(items => items.map(item =>
-      item.id === itemId
-        ? { ...item, quantity: Math.max(item.quantity - 1, 1) }
-        : item
-    ));
+    const item = cartItems.find(i => i.id === itemId);
+    if (item && item.quantity > 1) {
+      updateCartQuantity(itemId, item.quantity - 1);
+    }
   };
 
   const handleRemoveFromCart = (itemId) => {
     removeFromCart(itemId);
-    setCartItems(items => items.filter(item => item.id !== itemId));
   };
 
   const convertBase64ToDataURL = (base64String, mimeType = 'image/jpeg') => {
@@ -86,8 +71,6 @@ const Cart = () => {
     setIsProcessing(true);
     try {
       await placeOrder(checkoutForm.customerName, checkoutForm.email);
-      clearCart();
-      setCartItems([]);
       setShowCheckout(false);
       toast.success('Order placed successfully!');
     } catch (error) {

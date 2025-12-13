@@ -3,6 +3,7 @@ import React, { useContext, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { AppContext } from '../../Context/Context';
 import { Card, Badge, Button, Spinner } from '../ui';
+import api from '../../axios.jsx';
 import unplugged from '../../assets/unplugged.png';
 
 const Home = ({ selectedCategory, onClearCategory }) => {
@@ -157,8 +158,33 @@ const Home = ({ selectedCategory, onClearCategory }) => {
 
 // Product Card Component
 const ProductCard = ({ product, onAddToCart, convertImage }) => {
-  const { id, name, brand, price, category, productAvailable, imageData, stockQuantity } = product;
+  const { id, name, brand, price, category, productAvailable, imageData, imageName, stockQuantity } = product;
   const isOutOfStock = !productAvailable || stockQuantity === 0;
+  const [imageUrl, setImageUrl] = useState(null);
+
+  // Fetch image separately if not included in product data
+  useEffect(() => {
+    if (imageData) {
+      // Image data is included in product response
+      setImageUrl(convertImage(imageData));
+    } else if (imageName) {
+      // Need to fetch image separately
+      const fetchImage = async () => {
+        try {
+          const res = await api.get(`/product/${id}/image`, {
+            responseType: 'blob',
+          });
+          setImageUrl(URL.createObjectURL(res.data));
+        } catch (error) {
+          console.error('Error fetching image for product', id, error);
+          setImageUrl(unplugged);
+        }
+      };
+      fetchImage();
+    } else {
+      setImageUrl(unplugged);
+    }
+  }, [id, imageData, imageName, convertImage]);
 
   return (
     <Link to={`/product/${id}`}>
@@ -170,10 +196,10 @@ const ProductCard = ({ product, onAddToCart, convertImage }) => {
         {/* Image */}
         <div className="relative aspect-square bg-slate-100 dark:bg-slate-700 overflow-hidden">
           <img
-            src={convertImage(imageData)}
+            src={imageUrl || unplugged}
             alt={name}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-            onError={(e) => { e.target.src = '/placeholder.png'; }}
+            onError={(e) => { e.target.src = unplugged; }}
           />
           
           {/* Category Badge */}

@@ -2,6 +2,7 @@ import React, { useEffect, useState, useContext } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { AppContext } from "../Context/Context";
+import api from "../axios.jsx";
 import unplugged from "../assets/unplugged.png";
 
 const SearchResults = () => {
@@ -29,6 +30,103 @@ const SearchResults = () => {
     if (base64String.startsWith("http")) return base64String;
 
     return `data:${mimeType};base64,${base64String}`;
+  };
+
+  // ProductCard component with image fetching
+  const ProductCard = ({ product }) => {
+    const [imageUrl, setImageUrl] = useState(unplugged);
+    
+    useEffect(() => {
+      const fetchImage = async () => {
+        if (product.imageData) {
+          setImageUrl(convertBase64ToDataURL(product.imageData));
+        } else {
+          try {
+            const response = await api.get(`/product/${product.id}/image`, {
+              responseType: 'blob'
+            });
+            if (response.data && response.data.size > 0) {
+              const url = URL.createObjectURL(response.data);
+              setImageUrl(url);
+            }
+          } catch (error) {
+            console.log("Could not load image for product:", product.id);
+            setImageUrl(unplugged);
+          }
+        }
+      };
+      fetchImage();
+      
+      return () => {
+        if (imageUrl && imageUrl.startsWith('blob:')) {
+          URL.revokeObjectURL(imageUrl);
+        }
+      };
+    }, [product.id, product.imageData]);
+    
+    return (
+      <div className="col">
+        <div className="card h-100 shadow-sm">
+          <img
+            src={imageUrl}
+            className="card-img-top p-3"
+            alt={product.name}
+            style={{
+              height: "200px",
+              objectFit: "contain",
+              cursor: "pointer",
+            }}
+            onClick={() => handleViewProduct(product.id)}
+            onError={(e) => {
+              e.target.src = unplugged;
+            }}
+          />
+          <div className="card-body d-flex flex-column">
+            <h5 className="card-title">{product.name}</h5>
+            <p className="card-text text-muted mb-1">
+              {product.brand}
+            </p>
+            <div className="mb-2">
+              <span className="badge bg-secondary">
+                {product.category}
+              </span>
+            </div>
+            <p className="card-text small">
+              {product.description && product.description.length > 100
+                ? product.description.substring(0, 100) + "..."
+                : product.description}
+            </p>
+            <h5 className="card-text text-primary mt-auto mb-3">
+              $
+              {Number(product.price).toLocaleString("en-US", {
+                maximumFractionDigits: 2,
+              })}
+            </h5>
+            <div className="d-flex justify-content-between mt-auto">
+              <button
+                className="btn btn-outline-primary btn-sm"
+                onClick={() => handleViewProduct(product.id)}
+              >
+                View Details
+              </button>
+              <button
+                className="btn btn-primary btn-sm"
+                onClick={() => handleAddToCart(product)}
+                disabled={
+                  !product.productAvailable ||
+                  product.stockQuantity <= 0
+                }
+              >
+                {product.productAvailable &&
+                product.stockQuantity > 0
+                  ? "Add to Cart"
+                  : "Out of Stock"}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   const handleViewProduct = (productId) => {
@@ -70,67 +168,7 @@ const SearchResults = () => {
 
           <div className="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
             {searchData.map((product) => (
-              <div key={product.id} className="col">
-                <div className="card h-100 shadow-sm">
-                  <img
-                    src={convertBase64ToDataURL(product.imageData)}
-                    className="card-img-top p-3"
-                    alt={product.name}
-                    style={{
-                      height: "200px",
-                      objectFit: "contain",
-                      cursor: "pointer",
-                    }}
-                    onClick={() => handleViewProduct(product.id)}
-                    onError={(e) => {
-                      e.target.src = unplugged;
-                    }}
-                  />
-                  <div className="card-body d-flex flex-column">
-                    <h5 className="card-title">{product.name}</h5>
-                    <p className="card-text text-muted mb-1">
-                      {product.brand}
-                    </p>
-                    <div className="mb-2">
-                      <span className="badge bg-secondary">
-                        {product.category}
-                      </span>
-                    </div>
-                    <p className="card-text small">
-                      {product.description && product.description.length > 100
-                        ? product.description.substring(0, 100) + "..."
-                        : product.description}
-                    </p>
-                    <h5 className="card-text text-primary mt-auto mb-3">
-                      $
-                      {Number(product.price).toLocaleString("en-US", {
-                        maximumFractionDigits: 2,
-                      })}
-                    </h5>
-                    <div className="d-flex justify-content-between mt-auto">
-                      <button
-                        className="btn btn-outline-primary btn-sm"
-                        onClick={() => handleViewProduct(product.id)}
-                      >
-                        View Details
-                      </button>
-                      <button
-                        className="btn btn-primary btn-sm"
-                        onClick={() => handleAddToCart(product)}
-                        disabled={
-                          !product.productAvailable ||
-                          product.stockQuantity <= 0
-                        }
-                      >
-                        {product.productAvailable &&
-                        product.stockQuantity > 0
-                          ? "Add to Cart"
-                          : "Out of Stock"}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <ProductCard key={product.id} product={product} />
             ))}
           </div>
         </>

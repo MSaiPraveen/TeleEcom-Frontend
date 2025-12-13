@@ -99,6 +99,14 @@ const ContextProvider = ({ children }) => {
     });
   };
 
+  const updateCartQuantity = (id, quantity) => {
+    setCart((prev) =>
+      prev.map((item) =>
+        item.id === id ? { ...item, quantity: Math.max(1, quantity) } : item
+      )
+    );
+  };
+
   const removeFromCart = (id) => {
     setCart((prev) => prev.filter((item) => item.id !== id));
   };
@@ -161,6 +169,7 @@ const ContextProvider = ({ children }) => {
     // cart
     cart,
     addToCart,
+    updateCartQuantity,
     removeFromCart,
     clearCart,
     cartTotal,

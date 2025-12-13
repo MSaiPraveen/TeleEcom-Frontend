@@ -1,6 +1,7 @@
 import React, { useContext, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { AppContext } from "../Context/Context"; // ⬅️ named import
+import api from "../axios.jsx";
 import unplugged from "../assets/unplugged.png";
 
 const Home = ({ selectedCategory }) => {
@@ -114,68 +115,79 @@ const Home = ({ selectedCategory }) => {
               <h4>No Products Available</h4>
             </div>
           ) : (
-            filteredProducts.map((product) => {
-              const {
-                id,
-                brand,
-                name,
-                price,
-                productAvailable,
-                imageData,
-                stockQuantity,
-              } = product;
-
-              return (
-                <div className="col" key={id}>
-                  <div
-                    className={`card h-100 shadow-sm ${
-                      !productAvailable ? "bg-light" : ""
-                    }`}
-                  >
-                    <Link
-                      to={`/product/${id}`}
-                      className="text-decoration-none text-dark"
-                    >
-                      <img
-                        src={convertBase64ToDataURL(imageData)}
-                        alt={name}
-                        className="card-img-top p-2"
-                        style={{ height: "150px", objectFit: "cover" }}
-                        onError={(e) => {
-                          e.target.src = unplugged;
-                        }}
-                      />
-                      <div className="card-body d-flex flex-column">
-                        <h5 className="card-title">{name.toUpperCase()}</h5>
-                        <p className="card-text text-muted fst-italic">
-                          ~ {brand}
-                        </p>
-                        <hr />
-                        <div className="mt-auto">
-                          <h5 className="mb-2 fw-bold">
-                            <i className="bi bi-currency-dollar"></i>
-                            {price}
-                          </h5>
-                          <button
-                            className="btn btn-primary w-100"
-                            onClick={(e) => handleAddToCart(e, product)}
-                            disabled={!productAvailable || stockQuantity === 0}
-                          >
-                            {stockQuantity !== 0
-                              ? "Add to Cart"
-                              : "Out of Stock"}
-                          </button>
-                        </div>
-                      </div>
-                    </Link>
-                  </div>
-                </div>
-              );
-            })
+            filteredProducts.map((product) => (
+              <ProductCard 
+                key={product.id} 
+                product={product} 
+                onAddToCart={handleAddToCart}
+                convertBase64ToDataURL={convertBase64ToDataURL}
+              />
+            ))
           )}
         </div>
       </div>
     </>
+  );
+};
+
+// Separate ProductCard component with image fetching
+const ProductCard = ({ product, onAddToCart, convertBase64ToDataURL }) => {
+  const { id, brand, name, price, productAvailable, imageData, imageName, stockQuantity } = product;
+  const [imageUrl, setImageUrl] = useState(null);
+
+  useEffect(() => {
+    if (imageData) {
+      setImageUrl(convertBase64ToDataURL(imageData));
+    } else if (imageName) {
+      const fetchImage = async () => {
+        try {
+          const res = await api.get(`/product/${id}/image`, {
+            responseType: 'blob',
+          });
+          setImageUrl(URL.createObjectURL(res.data));
+        } catch (error) {
+          console.error('Error fetching image for product', id, error);
+          setImageUrl(unplugged);
+        }
+      };
+      fetchImage();
+    } else {
+      setImageUrl(unplugged);
+    }
+  }, [id, imageData, imageName, convertBase64ToDataURL]);
+
+  return (
+    <div className="col">
+      <div className={`card h-100 shadow-sm ${!productAvailable ? "bg-light" : ""}`}>
+        <Link to={`/product/${id}`} className="text-decoration-none text-dark">
+          <img
+            src={imageUrl || unplugged}
+            alt={name}
+            className="card-img-top p-2"
+            style={{ height: "150px", objectFit: "cover" }}
+            onError={(e) => { e.target.src = unplugged; }}
+          />
+          <div className="card-body d-flex flex-column">
+            <h5 className="card-title">{name.toUpperCase()}</h5>
+            <p className="card-text text-muted fst-italic">~ {brand}</p>
+            <hr />
+            <div className="mt-auto">
+              <h5 className="mb-2 fw-bold">
+                <i className="bi bi-currency-dollar"></i>
+                {price}
+              </h5>
+              <button
+                className="btn btn-primary w-100"
+                onClick={(e) => onAddToCart(e, product)}
+                disabled={!productAvailable || stockQuantity === 0}
+              >
+                {stockQuantity !== 0 ? "Add to Cart" : "Out of Stock"}
+              </button>
+            </div>
+          </div>
+        </Link>
+      </div>
+    </div>
   );
 };
 
