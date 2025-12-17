@@ -134,12 +134,23 @@ const ContextProvider = ({ children }) => {
       const items = cart.map((item) => ({
         productId: item.id,
         quantity: item.quantity,
+        price: Number(item.price),
       }));
+
+      // Calculate totals
+      const subtotal = cartTotal;
+      const shipping = subtotal > 99 ? 0 : 10;
+      const tax = Math.round(subtotal * 0.08 * 100) / 100; // 8% tax, rounded to 2 decimals
+      const totalAmount = subtotal + shipping + tax;
 
       const res = await api.post("/orders", {
         customerName,
         email,
         items,
+        subtotal,
+        shipping,
+        tax,
+        totalAmount,
       });
 
       clearCart();
