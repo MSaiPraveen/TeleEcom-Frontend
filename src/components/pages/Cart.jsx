@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { AppContext } from '../../Context/Context';
 import { Card, Button, Modal, Spinner, Input, Badge } from '../ui';
 import { toast } from 'react-toastify';
+import api from '../../axios.jsx';
 import unplugged from '../../assets/unplugged.png';
 
 const Cart = () => {
@@ -355,18 +356,48 @@ const Cart = () => {
   );
 };
 
-// Cart Item Component
+// Cart Item Component with image fetching
 const CartItem = ({ item, onIncrease, onDecrease, onRemove, convertImage }) => {
+  const [imageUrl, setImageUrl] = useState(unplugged);
+  
+  useEffect(() => {
+    const fetchImage = async () => {
+      if (item.imageData) {
+        setImageUrl(convertImage(item.imageData));
+      } else {
+        try {
+          const response = await api.get(`/product/${item.id}/image`, {
+            responseType: 'blob'
+          });
+          if (response.data && response.data.size > 0) {
+            const url = URL.createObjectURL(response.data);
+            setImageUrl(url);
+          }
+        } catch (error) {
+          console.log("Could not load image for cart item:", item.id);
+          setImageUrl(unplugged);
+        }
+      }
+    };
+    fetchImage();
+    
+    return () => {
+      if (imageUrl && imageUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(imageUrl);
+      }
+    };
+  }, [item.id, item.imageData]);
+  
   return (
     <div className="p-6 flex flex-col sm:flex-row gap-4">
       {/* Image */}
       <Link to={`/product/${item.id}`} className="flex-shrink-0">
         <div className="w-24 h-24 bg-slate-100 dark:bg-slate-700 rounded-lg overflow-hidden">
           <img
-            src={convertImage(item.imageData)}
+            src={imageUrl}
             alt={item.name}
             className="w-full h-full object-cover"
-            onError={(e) => { e.target.src = '/placeholder.png'; }}
+            onError={(e) => { e.target.src = unplugged; }}
           />
         </div>
       </Link>

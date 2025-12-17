@@ -1,8 +1,9 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import { AppContext } from "../Context/Context";
 import CheckoutPopup from "./CheckoutPopup";
 import { Button } from "react-bootstrap";
 import { toast } from "react-toastify";
+import api from "../axios.jsx";
 import unplugged from "../assets/unplugged.png";
 
 const Cart = () => {
@@ -60,6 +61,108 @@ const Cart = () => {
     }
   };
 
+  // CartItemRow component with image fetching
+  const CartItemRow = ({ item }) => {
+    const [imageUrl, setImageUrl] = useState(unplugged);
+    
+    useEffect(() => {
+      const fetchImage = async () => {
+        if (item.imageData) {
+          setImageUrl(convertBase64ToDataURL(item.imageData));
+        } else {
+          try {
+            const response = await api.get(`/product/${item.id}/image`, {
+              responseType: 'blob'
+            });
+            if (response.data && response.data.size > 0) {
+              const url = URL.createObjectURL(response.data);
+              setImageUrl(url);
+            }
+          } catch (error) {
+            console.log("Could not load image for cart item:", item.id);
+            setImageUrl(unplugged);
+          }
+        }
+      };
+      fetchImage();
+      
+      return () => {
+        if (imageUrl && imageUrl.startsWith('blob:')) {
+          URL.revokeObjectURL(imageUrl);
+        }
+      };
+    }, [item.id, item.imageData]);
+    
+    return (
+      <tr>
+        <td>
+          <div className="d-flex align-items-center">
+            <img
+              src={imageUrl}
+              alt={item.name}
+              className="rounded me-3"
+              width="80"
+              height="80"
+              style={{ objectFit: "cover" }}
+              onError={(e) => {
+                e.target.src = unplugged;
+              }}
+            />
+            <div>
+              <h6 className="mb-0">{item.name}</h6>
+              <small className="text-muted">
+                {item.brand}
+              </small>
+            </div>
+          </div>
+        </td>
+        <td>$ {item.price}</td>
+        <td>
+          <div
+            className="input-group input-group-sm"
+            style={{ width: "120px" }}
+          >
+            <button
+              className="btn btn-outline-secondary"
+              type="button"
+              onClick={() =>
+                handleDecreaseQuantity(item.id)
+              }
+            >
+              <i className="bi bi-dash"></i>
+            </button>
+            <input
+              type="text"
+              className="form-control text-center"
+              value={item.quantity}
+              readOnly
+            />
+            <button
+              className="btn btn-outline-secondary"
+              type="button"
+              onClick={() =>
+                handleIncreaseQuantity(item.id)
+              }
+            >
+              <i className="bi bi-plus"></i>
+            </button>
+          </div>
+        </td>
+        <td className="fw-bold">
+          $ {(item.price * item.quantity).toFixed(2)}
+        </td>
+        <td>
+          <button
+            className="btn btn-sm btn-outline-danger"
+            onClick={() => handleRemoveFromCart(item.id)}
+          >
+            <i className="bi bi-trash"></i>
+          </button>
+        </td>
+      </tr>
+    );
+  };
+
   return (
     <div className="container mt-5 pt-5">
       <div className="row justify-content-center">
@@ -92,72 +195,7 @@ const Cart = () => {
                       </thead>
                       <tbody>
                         {cartItems.map((item) => (
-                          <tr key={item.id}>
-                            <td>
-                              <div className="d-flex align-items-center">
-                                <img
-                                  src={convertBase64ToDataURL(item.imageData)}
-                                  alt={item.name}
-                                  className="rounded me-3"
-                                  width="80"
-                                  height="80"
-                                  style={{ objectFit: "cover" }}
-                                  onError={(e) => {
-                                    e.target.src = unplugged;
-                                  }}
-                                />
-                                <div>
-                                  <h6 className="mb-0">{item.name}</h6>
-                                  <small className="text-muted">
-                                    {item.brand}
-                                  </small>
-                                </div>
-                              </div>
-                            </td>
-                            <td>$ {item.price}</td>
-                            <td>
-                              <div
-                                className="input-group input-group-sm"
-                                style={{ width: "120px" }}
-                              >
-                                <button
-                                  className="btn btn-outline-secondary"
-                                  type="button"
-                                  onClick={() =>
-                                    handleDecreaseQuantity(item.id)
-                                  }
-                                >
-                                  <i className="bi bi-dash"></i>
-                                </button>
-                                <input
-                                  type="text"
-                                  className="form-control text-center"
-                                  value={item.quantity}
-                                  readOnly
-                                />
-                                <button
-                                  className="btn btn-outline-secondary"
-                                  type="button"
-                                  onClick={() =>
-                                    handleIncreaseQuantity(item.id)
-                                  }
-                                >
-                                  <i className="bi bi-plus"></i>
-                                </button>
-                              </div>
-                            </td>
-                            <td className="fw-bold">
-                              $ {(item.price * item.quantity).toFixed(2)}
-                            </td>
-                            <td>
-                              <button
-                                className="btn btn-sm btn-outline-danger"
-                                onClick={() => handleRemoveFromCart(item.id)}
-                              >
-                                <i className="bi bi-trash"></i>
-                              </button>
-                            </td>
-                          </tr>
+                          <CartItemRow key={item.id} item={item} />
                         ))}
                       </tbody>
                     </table>
